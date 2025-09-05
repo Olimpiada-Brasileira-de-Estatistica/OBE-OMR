@@ -25,14 +25,14 @@
   in {
     devShells = forAllSystems ({pkgs}: {
       default = let
-        python = pkgs.python314;
+        python = pkgs.python313;
       in
         pkgs.mkShell {
           packages = [
             (python.withPackages (ps:
               with ps; [
                 numpy
-                opencv
+                opencv4
               ]))
           ];
         };
