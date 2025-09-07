@@ -87,16 +87,16 @@ def erro(tipo, arquivo):
     nomeArqv = os.path.basename(arquivo)
     match tipo:
         case 1:
-            # shutil.move(arquivo, f"./ErroGabarito/{nomeArqv}")
+            shutil.move(arquivo, f"./ErroGabarito/{nomeArqv}")
             return 1
         case 2:
-            # shutil.move(arquivo, f"./ErroId/{nomeArqv}")
+            shutil.move(arquivo, f"./ErroId/{nomeArqv}")
             return 2
         case 3:
-            # shutil.move(arquivo, f"./ErroId/{nomeArqv}")
+            shutil.move(arquivo, f"./ErroId/{nomeArqv}")
             return 3
         case 4:
-            # shutil.move(arquivo, f"./ErroProc/{nomeArqv}")
+            shutil.move(arquivo, f"./ErroProc/{nomeArqv}")
             return 4
 
 
