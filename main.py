@@ -12,6 +12,10 @@ LIMITE_ID = 3100
 
 
 def main():
+    """
+    Função principal, prepara o arquivo de saída e lê o diretório ./Provas/
+    para avaliação automática do gabarito.
+    """
     utlis.preparaCSV()
     with os.scandir("./Provas/") as es:
         for e in es:
@@ -21,18 +25,33 @@ def main():
 
 
 def processaProvas(img):
+    """
+    Processa a imagem fornecida e retorna uma imagem com o gabarito e uma
+    imagem com id do aluno trabalhadas para detecção de marcação
+
+    Argumentos:
+    img = Imagem do OpenCV da prova ou uma foto desta
+
+    Procedimentos:
+    Aplica Grayscale, Blur Gaussiano e detecção de bordas por Canny. Então,
+    encontra os contornos e a partir desses o maior (gabarito) e segundo maior
+    (id) retângulos. Arruma a perspectiva de ambos e aplica o limiar. Retorna as
+    imagens com limiar.
+    """
     img = cv2.resize(img, (LARGURA, ALTURA))
-    imgContorno = img.copy()
-    imgInteresses = img.copy()
+    # imgContorno = img.copy()
+    # Para debug dos retângulos detectados
+    # imgInteresses = img.copy()
+
+    # Talvez seja possível pular o primeiro Grayscale.
     imgCinza = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
     imgBlur = cv2.GaussianBlur(imgCinza, (5, 5), 10)
     imgCanny = cv2.Canny(imgBlur, 10, 50)
 
     # Desenhando contornos
-    contornos, hierarchy = cv2.findContours(
-        imgCanny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
-    )
-    cv2.drawContours(imgContorno, contornos, -1, (0, 255, 0), 2)
+    contornos, _ = cv2.findContours(imgCanny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # cv2.drawContours(imgContorno, contornos, -1, (0, 255, 0), 2)
 
     # cv2.imshow("Contornos", imgContorno)
     # while True:
@@ -59,9 +78,9 @@ def processaProvas(img):
     imgIdArrumada = imgIdArrumada[80:740, 10:760]
 
     # Exibir retângulos detectados (TEST)
-    if pontasRetanguloGabarito.size != 0 and pontasRetanguloId.size != 0:
-        cv2.drawContours(imgInteresses, pontasRetanguloGabarito, -1, (255, 0, 0), 5)
-        cv2.drawContours(imgInteresses, pontasRetanguloId, -1, (0, 0, 255), 5)
+    # if pontasRetanguloGabarito.size != 0 and pontasRetanguloId.size != 0:
+    #     cv2.drawContours(imgInteresses, pontasRetanguloGabarito, -1, (255, 0, 0), 5)
+    #     cv2.drawContours(imgInteresses, pontasRetanguloId, -1, (0, 0, 255), 5)
 
     # Limiar marcados
     imgIdCinza = cv2.cvtColor(imgIdArrumada, cv2.COLOR_BGR2GRAY)
@@ -87,6 +106,22 @@ def processaProvas(img):
 
 
 def analisaProva(caminho):
+    """
+    A partir de um caminho para uma imagem de prova fornecido, obtém o id e
+    as respostas e escreve-os em ./SaidaProvas/resultados.csv. Envia prova mal
+    processadas para ./ErroProc/, mal lidas para ./ErroGabarito/ ou ./ErroId/ e
+    com id inválido para ./ErroId/.
+
+    Argumentos:
+    caminho = String com o caminho de entrada da prova
+
+    Retornos:
+    Retorna código de erro, caso ocorra, ou 0 caso contrário.
+
+    Efeitos:
+    Cria ou altera um arquivo .csv em ./SaidaProvas/resultados.csv,
+    possivelmente move provas de ./Provas/ para outros diretórios.
+    """
     # Processando imagem
     img = cv2.imread(caminho)
     # try:
@@ -110,7 +145,7 @@ def analisaProva(caminho):
         print(f"Erro na leitura do Gabarito! Erro: {e}")
         return 1
 
-    respostas = np.zeros(utlis.QUESTOES)
+    respostas = np.zeros(utlis.QUESTOES, dtype=int)
     k = 0
     while k < utlis.COLUNAS_GABARITO:  # Itera colunas
         j = 0
@@ -147,7 +182,7 @@ def analisaProva(caminho):
         print(f"Erro na leitura do Id! Erro: {e}")
         return 2
 
-    idAluno = np.ones(utlis.COLUNAS_ID) * -1
+    idAluno = np.ones(utlis.COLUNAS_ID, dtype=int) * -1
     k = 0
     while k < 10:  # Linhas da identificação
         i = 0

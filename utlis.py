@@ -13,7 +13,14 @@ COLUNAS_ID = 5
 
 
 def retContorno(contornos):
+    """
+    Encontra os retângulos com base num vetor de pontos e devolve um vetor com
+    os retângulos em ordem crescente de área
 
+    Argumentos:
+    contornos = Vetor de vetores com pontos que compõem os perímetros (contornos)
+    encontrados dos poligonos pela função cv2.findContours
+    """
     contornoRet = []
     for i in contornos:
         area = cv2.contourArea(i)
@@ -29,13 +36,28 @@ def retContorno(contornos):
     return contornoRet
 
 
-def encontraPontas(retangulo):
-    peri = cv2.arcLength(retangulo, True)
-    pontas = cv2.approxPolyDP(retangulo, 0.02 * peri, True)
+def encontraPontas(poligono):
+    """
+    Dado uma sequencia de pontos representando o perímetro de um polígono, conta
+    quantas pontas este tem e retorna esse valor.
+
+    Argumetnos:
+    poligono = Vetor de pontos do perímetro de uma região encontrada pela função
+    cv2.findContours
+    """
+    peri = cv2.arcLength(poligono, True)
+    pontas = cv2.approxPolyDP(poligono, 0.02 * peri, True)
     return pontas
 
 
 def reordenar(pontos):
+    """
+    Dado um vetor de pontos, ordena-os para preparar ajuste de perspectiva.
+    Devolve-os em ordem: [[0,0], [largura, 0], [0, altura], [largura, altura]]
+
+    Argumentos:
+    pontos = Vetor com quatro pontos de um retângulo encontrado por retContorno
+    """
     pontos = pontos.reshape((4, 2))
     novosPontos = np.zeros((4, 1, 2), np.int32)
     add = pontos.sum(1)
@@ -48,6 +70,14 @@ def reordenar(pontos):
 
 
 def separarGabarito(gabarito):
+    """
+    Separa a imagem do gabarito do aluno recebia em seções com as marcações
+    ("alternativas") separadas para leitura e devolve um vetor de matrizes do
+    numpy (imagens separadas).
+
+    Argumentos:
+    id = Imagem do OpenCV com a seção "gabarito" do aluno
+    """
     linhas = np.vsplit(gabarito, int(QUESTOES_POR_COLUNA))
     marcacoes = []
     for i in linhas:
@@ -66,6 +96,14 @@ def separarGabarito(gabarito):
 
 
 def separarId(id):
+    """
+    Separa a imagem do id do aluno recebida em seções com as marcações
+    ("alternativas") separadas para leitura e devolve um vetor de matrizes do
+    numpy (imagens separadas).
+
+    Argumentos:
+    id = Imagem do OpenCV com a seção "id" do aluno (escrita manual inclusa)
+    """
     linhas = np.vsplit(id, 10)  # Caixa dos alunos + marcações
     # linhas = np.delete(linhas, 0, 0)  # Deleta linha do id escrito
     marcacoes = []
@@ -78,7 +116,7 @@ def separarId(id):
 def erro(tipo, arquivo):
     """
     Função para jogar erros. Altera o nome do arquivo da prova e coloca em uma
-    pasta do erro específico.
+    pasta do erro específico. Retorna o erro conforme a lista abaixo:
         1. Erro na leitura da prova (não encontrou gabarito)
         2. Erro na leitura da prova (não encontrou id)
         3. Erro na leitura de id ou id inválido
@@ -104,12 +142,19 @@ def erro(tipo, arquivo):
 def escreveSaida(id, resposta):
     """
     Escreve em um arquivo .csv a saída da leitura da prova
+
+    Argumentos:
+    id = array do numpy com inteiros representando os algarismos lidos do id
+    resposta = array do numpy com inteiros representando as respostas do aluno:
+        0. Resposta em branco ou anulada
+        1. Aternativa "a"
+        2. Aternativa "b"
+        3. Aternativa "c"
+        4. Aternativa "d"
     """
-    id = map(int, id)
     id = "".join(map(str, id))
-    dados = {"id": id}
-    resposta = map(int, resposta)
     respostas = dict(enumerate(resposta, 1))
+    dados = {"id": id}
     dados.update(respostas)
     print(dados)
     with open("./SaidaProvas/resultados.csv", "a") as saidacsv:
