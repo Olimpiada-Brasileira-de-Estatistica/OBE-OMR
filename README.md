@@ -20,8 +20,4 @@ falhar algumas vezes, mas provavelmente não guardará dados incorretos.
 # Dependências
 
 São necessários os pacotes `OpenCV` e `numpy`. Caso use Nix, disponibilizamos um
-flake para ser acessado com `nix develop`. Caso contrário, recomendamos o uso do
-`pip`: atualize o pip `pip install --upgrade pip` e para a maioria dos sistemas
-`pip install opencv-python`. Para sistemas Headless, como servidores ou docker,
-`pip install opencv-python-headless`. O numpy é instalado da mesma maneira: `pip
-install numpy`.
+flake para ser acessado com `nix develop`. Caso contrário, use o `requirements.txt` e o pip.
