@@ -124,12 +124,12 @@ def analisaProva(caminho):
     """
     # Processando imagem
     img = cv2.imread(caminho)
-    # try:
-    imgIdLimiar, imgGabaritoLimiar = processaProvas(img)
-    # except Exception as e:
-    #     utlis.erro(4, caminho)
-    #     print(f"Erro no processamento da Prova! Erro: {e}")
-    #     return 4
+    try:
+        imgIdLimiar, imgGabaritoLimiar = processaProvas(img)
+    except Exception as e:
+        utlis.erro(4, caminho)
+        print(f"Erro no processamento da Prova! Erro: {e}")
+        return 4
 
     # cv2.imshow("id", imgIdLimiar)
     # cv2.imshow("gab", imgGabaritoLimiar)
