@@ -22,7 +22,7 @@ def processar_emails():
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Conectando ao servidor IMAP...")
     
     try:
-        # Conecta ao servidor de e-mail usando SSL para segurança
+        # Conecta no email com SSL
         mail = imaplib.IMAP4_SSL(SERVIDOR_IMAP)
         mail.login(EMAIL_USUARIO, SENHA_DE_APP)
         
@@ -46,13 +46,13 @@ def processar_emails():
         for email_id in email_ids:
             print(f"\n--- Processando E-mail ID: {email_id.decode()} ---")
             
-            # Busca o conteúdo completo do e-mail
+            # Vê o email todo
             status, msg_data = mail.fetch(email_id, "(RFC822)")
             if status != 'OK':
                 print(f"  [ERRO] Não foi possível buscar o e-mail ID {email_id.decode()}.")
                 continue
 
-            # Converte o conteúdo bruto do e-mail em um objeto de mensagem
+            # Converte o conteudo em mensagem
             for response_part in msg_data:
                 if isinstance(response_part, tuple):
                     msg = email.message_from_bytes(response_part[1])
@@ -69,7 +69,7 @@ def processar_emails():
                     print(f"  De: {remetente}")
                     print(f"  Assunto: '{assunto}'")
 
-                    # 1. Validação do Assunto (deve ser apenas números)
+                    # Valida se é tudo numero
                     if not assunto.strip().isdigit():
                         print(f"  [ERRO] Assunto inválido. Não contém apenas números. Pulando.")
                         # Aqui você poderia mover o e-mail para uma pasta de "Erros" no Gmail
@@ -77,7 +77,7 @@ def processar_emails():
                     
                     id_aluno = assunto.strip()
                     
-                    # 2. Processamento do Anexo
+                    # Processa imagem
                     if msg.is_multipart():
                         anexo_encontrado = False
                         for part in msg.walk():
