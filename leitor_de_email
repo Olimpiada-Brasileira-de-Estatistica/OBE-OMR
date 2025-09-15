@@ -1,0 +1,128 @@
+import email
+import imaplib
+import os
+import time
+from datetime import datetime
+
+# --- CONFIGURAÇÕES ---
+EMAIL_USUARIO = "provas.obe.2025@gmail.com"
+SENHA_DE_APP = "zgpw wxod rtbz jecq"
+SERVIDOR_IMAP = "imap.gmail.com"
+
+# --- PASTAS --
+PASTA_SAIDA = "Provas"
+
+# -- FUNÇÃO PRINCIPAL ---
+
+def processar_emails():
+    """
+    Conecta-se à caixa de e-mail, lê e-mails não lidos, valida o conteúdo
+    e salva os anexos de prova na pasta correta.
+    """
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Conectando ao servidor IMAP...")
+    
+    try:
+        # Conecta ao servidor de e-mail usando SSL para segurança
+        mail = imaplib.IMAP4_SSL(SERVIDOR_IMAP)
+        mail.login(EMAIL_USUARIO, SENHA_DE_APP)
+        
+        mail.select("inbox")
+        
+        status, messages = mail.search(None, "UNSEEN")
+        
+        if status != 'OK':
+            print("Erro ao procurar e-mails.")
+            return
+
+        # Converte a lista de IDs de e-mail para uma lista Python
+        email_ids = messages[0].split()
+        
+        if not email_ids:
+            print("Nenhum e-mail novo encontrado.")
+            return
+
+        print(f"Encontrados {len(email_ids)} novos e-mails. Processando...")
+
+        for email_id in email_ids:
+            print(f"\n--- Processando E-mail ID: {email_id.decode()} ---")
+            
+            # Busca o conteúdo completo do e-mail
+            status, msg_data = mail.fetch(email_id, "(RFC822)")
+            if status != 'OK':
+                print(f"  [ERRO] Não foi possível buscar o e-mail ID {email_id.decode()}.")
+                continue
+
+            # Converte o conteúdo bruto do e-mail em um objeto de mensagem
+            for response_part in msg_data:
+                if isinstance(response_part, tuple):
+                    msg = email.message_from_bytes(response_part[1])
+                    
+                    # Extrai o assunto e o remetente
+                    remetente = msg["from"]
+                    assunto_bruto = msg["subject"]
+                    
+                    # Decodifica o assunto para lidar com caracteres especiais
+                    assunto, encoding = email.header.decode_header(assunto_bruto)[0]
+                    if isinstance(assunto, bytes):
+                        assunto = assunto.decode(encoding if encoding else "utf-8")
+                    
+                    print(f"  De: {remetente}")
+                    print(f"  Assunto: '{assunto}'")
+
+                    # 1. Validação do Assunto (deve ser apenas números)
+                    if not assunto.strip().isdigit():
+                        print(f"  [ERRO] Assunto inválido. Não contém apenas números. Pulando.")
+                        # Aqui você poderia mover o e-mail para uma pasta de "Erros" no Gmail
+                        continue
+                    
+                    id_aluno = assunto.strip()
+                    
+                    # 2. Processamento do Anexo
+                    if msg.is_multipart():
+                        anexo_encontrado = False
+                        for part in msg.walk():
+                            # Verifica se a parte é um anexo
+                            if part.get_content_maintype() == 'multipart' or part.get('Content-Disposition') is None:
+                                continue
+                            
+                            nome_arquivo = part.get_filename()
+                            
+                            if nome_arquivo:
+                                # 3. Validação do tipo de arquivo
+                                if nome_arquivo.lower().endswith(('.png', '.jpg', '.jpeg')):
+                                    anexo_encontrado = True
+                                    
+                                    # Gera o novo nome do arquivo
+                                    extensao = os.path.splitext(nome_arquivo)[1]
+                                    novo_nome_arquivo = f"{id_aluno}{extensao}"
+                                    caminho_salvar = os.path.join(PASTA_SAIDA, novo_nome_arquivo)
+                                    
+                                    # Salva o anexo na pasta de saída
+                                    with open(caminho_salvar, 'wb') as f:
+                                        f.write(part.get_payload(decode=True))
+                                    
+                                    print(f"  [SUCESSO] Anexo '{nome_arquivo}' salvo como '{novo_nome_arquivo}' em '{PASTA_SAIDA}/'")
+                                    break # Para após encontrar o primeiro anexo válido
+                                else:
+                                    print(f"  [ERRO] Anexo '{nome_arquivo}' não é um formato de imagem válido (PNG, JPG).")
+
+                        if not anexo_encontrado:
+                            print("  [ERRO] E-mail não continha um anexo de imagem válido.")
+                    else:
+                        print("  [ERRO] E-mail não parece ter um anexo.")
+
+        # Desconecta do servidor
+        mail.logout()
+        print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Processamento concluído. Desconectado.")
+        
+    except Exception as e:
+        print(f"Ocorreu um erro inesperado: {e}")
+
+# --- LOOP DE EXECUÇÃO ---
+if __name__ == "__main__":
+    # O script irá rodar continuamente, verificando por novos e-mails a cada 5 minutos (300 segundos)
+    while True:
+        processar_emails()
+        intervalo_segundos = 300
+        print(f"Aguardando {intervalo_segundos / 60:.0f} minutos para a próxima verificação...")
+        time.sleep(intervalo_segundos)
