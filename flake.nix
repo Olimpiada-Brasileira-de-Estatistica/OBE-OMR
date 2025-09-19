@@ -40,11 +40,13 @@
       in
         pkgs.mkShell {
           packages = [
+            pkgs.poppler-utils
             (python.withPackages (ps:
               with ps; [
                 numpy
                 ipython
                 opencv4
+                pdf2image
               ]))
           ];
           buildInputs = [
